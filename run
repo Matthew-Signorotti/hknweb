@@ -1,3 +1,7 @@
 #!/usr/bin/env sh
 
-pipenv run gunicorn -w 2 -b unix:/srv/apps/$(whoami)/dev-$(whoami).sock --log-file - main:app
+WHOAMI=$(whoami)
+
+pipenv run gunicorn -w 2 -b unix:/srv/apps/$WHOAMI/dev-$WHOAMI.sock \
+    --pid /home/${WHOAMI::1}/${WHOAMI::2}/${WHOAMI}/hknweb/tmp/gunicorn.pid \
+    --log-file - main:app
