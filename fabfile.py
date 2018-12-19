@@ -1,5 +1,6 @@
 from fabric import Connection, Config, Group
 from fabric import task
+from invoke import Collection
 from invoke.config import merge_dicts
 
 from pprint import pprint
@@ -9,7 +10,7 @@ class DeployConfig(Config):
     def global_defaults():
         hkn_defaults = {
             'deploy': {
-                'hosts': ['apphost.ocf.berkeley.edu'],
+                'host': 'apphost.ocf.berkeley.edu',
                 'path': '/home/h/hk/hkn/hknweb',
                 'repo': 'git@github.com:compserv/hknweb.git',
                 'branch': 'master',
@@ -21,21 +22,28 @@ class DeployConfig(Config):
         return merge_dicts(Config.global_defaults(), hkn_defaults)
 
 targets = {
-    'prod': dict(
-        branch = 'master',
-    ),
-    'dev': dict(
-        branch = 'develop',
-    ),
+    'prod': {
+        'deploy': {
+            'branch': 'master',
+        },
+    },
+    'dev': {
+        'deploy': {
+            'branch': 'develop',
+        },
+    },
 }
 
 configs = { target: DeployConfig(overrides=config)
             for target, config in targets.items() }
 
-pprint(vars(configs['prod']))
+# pprint(vars(configs['prod']))
 
 def create_release(c):
+    print(c.host)
+    print(c.user)
     print("Creating release...")
+    print(c.run('hostname'))
 
 def symlink_shared(c):
     print("Symlinking shared files...")
@@ -52,10 +60,12 @@ def publish(c):
 
 @task
 def deploy(c):
-    for connection in Group(c.hosts):
-        update(connection)
-        publish(connection)
+    update(c)
+    publish(c)
 
 @task
 def rollback(c, release=None):
     pass
+
+ns = Collection(deploy, rollback)
+ns.configure(configs['prod'])
