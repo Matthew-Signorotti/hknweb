@@ -1,19 +1,24 @@
 from fabric import Connection, Config, Group
 from fabric import task
+from invoke.config import merge_dicts
+
+from pprint import pprint
 
 class DeployConfig(Config):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.load_defaults(dict(
-            deploy_path = '/home/h/hk/hkn/hknweb',
-            repo_url = 'git@github.com:compserv/hknweb.git',
-            branch = 'master',
-            hosts = ['apphost.ocf.berkeley.edu'],
-            user = 'hkn',
-            linked_files = [],
-            linked_dirs = [],
-            keep_releases = 5,
-        ), merge=True)
+    @staticmethod
+    def global_defaults():
+        hkn_defaults = {
+            'deploy': {
+                'hosts': ['apphost.ocf.berkeley.edu'],
+                'path': '/home/h/hk/hkn/hknweb',
+                'repo': 'git@github.com:compserv/hknweb.git',
+                'branch': 'master',
+                'linked_files': [],
+                'linked_dirs': [],
+                'keep_releases': 5,
+            },
+        }
+        return merge_dicts(Config.global_defaults(), hkn_defaults)
 
 targets = {
     'prod': dict(
@@ -27,7 +32,7 @@ targets = {
 configs = { target: DeployConfig(overrides=config)
             for target, config in targets.items() }
 
-print(configs)
+pprint(vars(configs['prod']))
 
 def create_release(c):
     print("Creating release...")
