@@ -4,15 +4,26 @@ from invoke import Collection
 from invoke.config import merge_dicts
 
 from pprint import pprint
+import posixpath
+
+from deploy import git
 
 class DeployConfig(Config):
     @staticmethod
     def global_defaults():
         hkn_defaults = {
+            'forward_agent': True,
             'deploy': {
+                'name': 'default',
                 'host': 'apphost.ocf.berkeley.edu',
-                'path': '/home/h/hk/hkn/hknweb',
-                'repo': 'git@github.com:compserv/hknweb.git',
+                'path': {
+                    'root': '/home/h/hk/hkn/hknweb',
+                    'repo': 'repo',
+                    'releases': 'releases',
+                    'current': 'current',
+                    'shared': 'shared',
+                },
+                'repo_url': 'git@github.com:compserv/hknweb.git',
                 'branch': 'master',
                 'linked_files': [],
                 'linked_dirs': [],
@@ -21,14 +32,17 @@ class DeployConfig(Config):
         }
         return merge_dicts(Config.global_defaults(), hkn_defaults)
 
+
 targets = {
     'prod': {
         'deploy': {
+            'name': 'prod',
             'branch': 'master',
         },
     },
     'dev': {
         'deploy': {
+            'name': 'dev',
             'branch': 'develop',
         },
     },
@@ -40,10 +54,8 @@ configs = { target: DeployConfig(overrides=config)
 # pprint(vars(configs['prod']))
 
 def create_release(c):
-    print(c.host)
-    print(c.user)
     print("Creating release...")
-    print(c.run('hostname'))
+    git.check(c)
 
 def symlink_shared(c):
     print("Symlinking shared files...")
