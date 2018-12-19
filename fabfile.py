@@ -1,36 +1,56 @@
-from fake.api import env
-from fake.api import run
-from fake.api import task
-from fake.tasks.deploy import *
+from fabric import Connection, Config, Group
+from fabric import task
 
-env.roledefs = {
-    'prod': {
-        'hosts': ['apphost.ocf.berkeley.edu'],
-        'branch': 'master',
-    },
+class DeployConfig(Config):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.load_defaults(dict(
+            deploy_path = '/home/h/hk/hkn/hknweb',
+            repo_url = 'git@github.com:compserv/hknweb.git',
+            branch = 'master',
+            hosts = ['apphost.ocf.berkeley.edu'],
+            user = 'hkn',
+            linked_files = [],
+            linked_dirs = [],
+            keep_releases = 5,
+        ), merge=True)
+
+targets = {
+    'prod': dict(
+        branch = 'master',
+    ),
+    'dev': dict(
+        branch = 'develop',
+    ),
 }
 
-env.forward_agent = True
-env.deploy_path = '/home/h/hk/hkn/hknweb'
-env.user = 'hkn'
-env.repo_url = 'git@github.com:compserv/hknweb.git'
-env.linked_dirs = ['config']
-# env.keep_releases = 5
+configs = { target: DeployConfig(overrides=config)
+            for target, config in targets.items() }
 
+print(configs)
+
+def create_release(c):
+    print("Creating release...")
+
+def symlink_shared(c):
+    print("Symlinking shared files...")
+
+def symlink_release(c):
+    print("Symlinking current@ to release...")
+
+def update(c):
+    create_release(c)
+    symlink_shared(c)
+
+def publish(c):
+    symlink_release(c)
 
 @task
-def start():
-    run('systemctl --user start hknweb.service')
-
-
-@task
-def stop():
-    run('systemctl --user stop hknweb.service')
-
+def deploy(c):
+    for connection in Group(c.hosts):
+        update(connection)
+        publish(connection)
 
 @task
-def restart():
-    run('systemctl --user restart hknweb.service')
-
-
-after(finished, restart)
+def rollback(c, release=None):
+    pass
