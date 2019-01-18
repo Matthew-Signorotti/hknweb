@@ -16,3 +16,6 @@ def current_path(c: Connection) -> str:
 
 def shared_path(c: Connection) -> str:
     return posixpath.join(deploy_path(c), c.deploy.path.shared)
+
+def release_path(c: Connection) -> str:
+    return posixpath.join(releases_path(c), c.release)

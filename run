@@ -5,16 +5,15 @@ DJANGO_WSGI_MODULE=hknweb.wsgi
 DJANGO_DIR=~/hknweb/prod/current
 VENV=~/hknweb/prod/shared/venv
 SOCKFILE=/srv/apps/$(whoami)/dev.sock
-SECRET_KEY=$(<~/hknweb/prod/shared/config/secret_key.txt)
-NUM_WORKERS=2
+NUM_WORKERS=4
 PYTHONPATH=$DJANGO_DIR:$PYTHONPATH
 
 export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
-export SECRET_KEY=$SECRET_KEY
+export HKNWEB_MODE=prod
 
 cd $DJANGO_DIR
 
-exec ~/.local/bin/pipenv gunicorn $DJANGO_WSGI_MODULE \
+exec ~/.local/bin/pipenv run gunicorn $DJANGO_WSGI_MODULE \
     -w $NUM_WORKERS \
     --log-level debug \
     --log-file - \
