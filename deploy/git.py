@@ -26,7 +26,7 @@ def fetch(c: Connection):
     with c.cd(c.repo_path):
         c.run("git remote set-url origin {}".format(c.deploy.repo_url), echo=True)
         c.run("git remote update", echo=True)
-        c.run("git fetch origin {}".format(c.commit), echo=True)
+        c.run("git fetch origin {0}:{0}".format(c.commit), echo=True)
 
 def revision_number(c: Connection, revision: str) -> str:
     with c.cd(c.repo_path):

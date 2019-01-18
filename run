@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DJANGO_SETTINGS_MODULE=hknweb.prod
+DJANGO_SETTINGS_MODULE=hknweb.settings
 DJANGO_WSGI_MODULE=hknweb.wsgi
 DJANGO_DIR=~/hknweb/prod/current
 VENV=~/hknweb/prod/shared/venv
