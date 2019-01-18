@@ -87,6 +87,12 @@ def blackbox_decrypt(c):
     with c.cd(c.release_path):
         c.run("blackbox_postdeploy", echo=True)
 
+def install_deps(c):
+    print("-- Installing dependencies")
+    with c.cd(c.release_path):
+        c.run("source {}/venv/bin/activate".format(c.shared_path), echo=True)
+        c.run("pipenv install --deploy", echo=True)
+
 def symlink_release(c):
     print("-- Symlinking current@ to release")
     c.run("ln -s {} {}".format(c.release_path, c.current_path), echo=True)
@@ -115,11 +121,18 @@ def setup(c, commit=None, release=None):
     print("commit: {}".format(c.commit))
     make_dirs(c)
 
+def create_venv(c):
+    c.run("python3 -m venv {}/venv".format(c.shared_path), echo=True)
+
 def update(c):
     print("== Update ==")
     create_release(c)
     symlink_shared(c)
     blackbox_decrypt(c)
+    if not c.run("[ -f {}/HEAD ]".format(c.repo_path), warn=True, echo=True).ok:
+        create_venv(c)
+    activate_venv(c)
+    install_deps(c)
 
 def publish(c):
     print("== Publish ==")

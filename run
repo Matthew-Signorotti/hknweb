@@ -13,7 +13,9 @@ export HKNWEB_MODE=prod
 
 cd $DJANGO_DIR
 
-exec ~/.local/bin/pipenv run gunicorn $DJANGO_WSGI_MODULE \
+source $VENV/bin/activate
+
+exec gunicorn $DJANGO_WSGI_MODULE \
     -w $NUM_WORKERS \
     --log-level debug \
     --log-file - \
