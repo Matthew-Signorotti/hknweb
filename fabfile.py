@@ -88,6 +88,10 @@ def symlink_release(c):
     print("Symlinking current@ to release")
     c.run("ln -s {} {}".format(c.release_path, c.current_path))
 
+def systemd_restart(c):
+    print("Restarting systemd unit")
+    c.run("systemctl --user restart hknweb.service")
+
 def setup(c, commit=None, release=None):
     print("== Setup ==")
     if commit is None:
@@ -117,18 +121,24 @@ def update(c):
 def publish(c):
     print("== Publish ==")
     symlink_release(c)
+    systemd_restart(c)
+
+def finish(c):
+    pass
 
 @task
 def deploy(c, commit=None):
     setup(c, commit=commit)
     update(c)
     publish(c)
+    finish(c)
 
 @task
 def rollback(c, release=None):
     setup(c, release=release)
     update(c)
     publish(c)
+    finish(c)
 
 ns = Collection(deploy, rollback)
 ns.configure(configs['prod'])
