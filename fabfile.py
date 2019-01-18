@@ -12,9 +12,9 @@ from deploy import path
 
 def timestamp(c: Connection) -> str:
     """
-    Returns the server date-time, encoded as YYYY-MM-SSTHH:MM:SS.
+    Returns the server date-time, encoded as YYYYMMSS_HHMMSS.
     """
-    return c.run("date +%Y-%m-%dT%H:%M:%S").stdout.strip()
+    return c.run("date +%Y%m%d_%H%M%S").stdout.strip()
 
 def make_dirs(c: Connection):
     dirs = (
@@ -55,13 +55,13 @@ targets = {
     'prod': {
         'deploy': {
             'name': 'prod',
-            'branch': 'deploy',
+            'branch': 'master',
         },
     },
-    'dev': {
+    'deploy': {
         'deploy': {
-            'name': 'dev',
-            'branch': 'develop',
+            'name': 'prod',
+            'branch': 'deploy',
         },
     },
 }
@@ -72,51 +72,54 @@ configs = { target: DeployConfig(overrides=config)
 # pprint(vars(configs['prod']))
 
 def create_release(c):
-    print("Creating release")
+    print("-- Creating release")
     git.check(c)
     git.update(c)
+    c.commit = git.revision_number(c, c.commit)
+    git.create_archive(c)
 
 def symlink_shared(c):
-    print("Symlinking shared files")
+    print("-- Symlinking shared files")
+    print("(TODO: do something)")
 
-def decrypt_secrets(c):
-    print("Decrypting secrets")
+def blackbox_decrypt(c):
+    print("-- Decrypting secrets")
     with c.cd(c.release_path):
-        c.run("blackbox_postdeploy")
+        c.run("blackbox_postdeploy", echo=True)
 
 def symlink_release(c):
-    print("Symlinking current@ to release")
-    c.run("ln -s {} {}".format(c.release_path, c.current_path))
+    print("-- Symlinking current@ to release")
+    c.run("ln -s {} {}".format(c.release_path, c.current_path), echo=True)
 
 def systemd_restart(c):
-    print("Restarting systemd unit")
-    c.run("systemctl --user restart hknweb.service")
+    print("-- Restarting systemd unit")
+    c.run("systemctl --user restart hknweb.service", echo=True)
 
 def setup(c, commit=None, release=None):
     print("== Setup ==")
-    if commit is None:
-        c.commit = c.deploy.branch
-    else:
-        c.commit = commit
     if release is None:
         c.release = timestamp(c)
     else:
         c.release = release
-    print("commit: {}".format(c.commit))
-    print("release: {}".format(c.release))
     c.deploy_path = path.deploy_path(c)
     c.repo_path = path.repo_path(c)
     c.releases_path = path.releases_path(c)
     c.current_path = path.current_path(c)
     c.shared_path = path.shared_path(c)
     c.release_path = path.release_path(c)
+    if commit is None:
+        c.commit = c.deploy.branch
+    else:
+        c.commit = commit
+    print("release: {}".format(c.release))
+    print("commit: {}".format(c.commit))
     make_dirs(c)
 
 def update(c):
     print("== Update ==")
     create_release(c)
     symlink_shared(c)
-    decrypt_secrets(c)
+    blackbox_decrypt(c)
 
 def publish(c):
     print("== Publish ==")
@@ -132,6 +135,7 @@ def deploy(c, commit=None):
     update(c)
     publish(c)
     finish(c)
+    c.close()
 
 @task
 def rollback(c, release=None):
@@ -141,4 +145,4 @@ def rollback(c, release=None):
     finish(c)
 
 ns = Collection(deploy, rollback)
-ns.configure(configs['prod'])
+ns.configure(configs['deploy'])
