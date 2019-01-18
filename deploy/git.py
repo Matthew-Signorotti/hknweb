@@ -23,14 +23,14 @@ def clone(c: Connection):
         c.run("git clone --bare {} {}".format(c.deploy.repo_url, c.repo_path))
 
 def fetch(c: Connection):
-    with c.cd(repo_path(c)):
+    with c.cd(c.repo_path):
         c.run("git fetch")
         c.run("git checkout {}".format(c.commit))
 
 def revision_number(c: Connection, revision: str) -> str:
-    with c.cd(repo_path(c)):
+    with c.cd(c.repo_path):
         return c.run("git rev-parse {}".format(revision)).stdout.strip()
 
 def create_archive(c: Connection):
-    with c.cd(repo_path(c)):
+    with c.cd(c.repo_path):
         c.run("git archive {} | tar -x -f - -C {}".format(c.commit, c.release))
