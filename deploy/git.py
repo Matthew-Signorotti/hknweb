@@ -1,6 +1,6 @@
 from fabric import Connection
 
-from .path import repo_path
+from .path import repo_path, file_exists
 
 def check(c: Connection):
     return remote_reachable(c)
@@ -12,7 +12,7 @@ def update(c: Connection):
         clone(c)
 
 def repo_exists(c: Connection) -> bool:
-    return c.run("[ -f {}/HEAD ]".format(c.repo_path), warn=True, echo=True).ok
+    return file_exists(c, "{}/HEAD".format(c.repo_path))
 
 def remote_reachable(c: Connection) -> bool:
     with c.cd(c.repo_path):

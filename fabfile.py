@@ -16,7 +16,7 @@ def timestamp(c: Connection) -> str:
     """
     return c.run("date +%Y%m%d_%H%M%S").stdout.strip()
 
-def make_dirs(c: Connection):
+def create_dirs(c: Connection):
     dirs = (
         c.repo_path,
         c.deploy_path,
@@ -80,7 +80,8 @@ def create_release(c):
 
 def symlink_shared(c):
     print("-- Symlinking shared files")
-    print("(TODO: do something)")
+    with c.cd(c.release_path):
+        c.run("ln -s {}/venv ./.venv".format(c.shared_path), echo=True)
 
 def blackbox_decrypt(c):
     print("-- Decrypting secrets")
@@ -90,7 +91,12 @@ def blackbox_decrypt(c):
 def install_deps(c):
     print("-- Installing dependencies")
     with c.cd(c.release_path):
-        c.run("source {}/venv/bin/activate && pipenv install --deploy".format(c.shared_path), echo=True)
+        c.run("source .venv/bin/activate && pipenv install --deploy", echo=True, env={"PIPENV_VENV_IN_PROJECT": "true"})
+
+def django_migrate(c):
+    print("-- Migrating tables")
+    with c.cd(c.release_path):
+        c.run("source .venv/bin/activate && HKNWEB_MODE=prod python ./manage.py migrate")
 
 def symlink_release(c):
     print("-- Symlinking current@ to release")
@@ -118,19 +124,22 @@ def setup(c, commit=None, release=None):
         c.commit = commit
     print("release: {}".format(c.release))
     print("commit: {}".format(c.commit))
-    make_dirs(c)
+    create_dirs(c)
+    if not path.file_exists(c, "{}/venv/bin/activate".format(c.shared_path)):
+        create_venv(c)
 
 def create_venv(c):
-    c.run("python3.7 -m venv {}/venv".format(c.shared_path), echo=True)
+    c.run("python3.7 -m venv {}/venv".format(c.shared_path))
 
 def update(c):
     print("== Update ==")
     create_release(c)
     symlink_shared(c)
     blackbox_decrypt(c)
-    if not c.run("[ -f {}/venv ]".format(c.shared_path), warn=True, echo=True).ok:
+    if not path.dir_exists(c, "{}/venv".format(c.shared_path)):
         create_venv(c)
     install_deps(c)
+    django_migrate(c)
 
 def publish(c):
     print("== Publish ==")

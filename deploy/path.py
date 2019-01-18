@@ -2,6 +2,15 @@ import posixpath
 
 from fabric import Connection
 
+def exists(c: Connection, path: str) -> bool:
+    return c.run("[[ -e {} ]]".format(path), warn=True).ok
+
+def file_exists(c: Connection, path: str) -> bool:
+    return c.run("[[ -f {} ]]".format(path), warn=True).ok
+
+def dir_exists(c: Connection, path: str) -> bool:
+    return c.run("[[ -d {} ]]".format(path), warn=True).ok
+
 def deploy_path(c: Connection) -> str:
     return posixpath.join(c.deploy.path.root, c.deploy.name)
 
