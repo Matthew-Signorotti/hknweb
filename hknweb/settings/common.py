@@ -74,9 +74,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'hknweb',
-        'HOST': 'localhost',
+        'HOST': 'mysql',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'read_default_file': "~/.my.cnf",
         },
     },
 }
